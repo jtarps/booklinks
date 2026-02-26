@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ListPlus, Plus, Check, Loader2 } from 'lucide-react';
+import { ListPlus, Plus, Check, Loader2, Globe, Lock } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { supabase } from '@/lib/supabase-browser';
 
@@ -26,6 +26,7 @@ export function AddToListButton({ bookId, bookTitle }: AddToListButtonProps) {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [newListPublic, setNewListPublic] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -110,6 +111,7 @@ export function AddToListButton({ bookId, bookTitle }: AddToListButtonProps) {
         user_id: user.id,
         name: newListName.trim(),
         slug,
+        is_public: newListPublic,
       })
       .select('id, name, slug')
       .single();
@@ -118,6 +120,7 @@ export function AddToListButton({ bookId, bookTitle }: AddToListButtonProps) {
       setLists((prev) => [data, ...prev]);
       await addToList(data.id);
       setNewListName('');
+      setNewListPublic(true);
       setCreating(false);
     }
   };
@@ -183,6 +186,23 @@ export function AddToListButton({ bookId, bookTitle }: AddToListButtonProps) {
                     className="w-full text-sm rounded border-gray-300 mb-2"
                     autoFocus
                   />
+                  <button
+                    type="button"
+                    onClick={() => setNewListPublic(!newListPublic)}
+                    className="flex items-center gap-1.5 w-full text-xs text-gray-500 mb-2 hover:text-gray-700"
+                  >
+                    {newListPublic ? (
+                      <>
+                        <Globe className="h-3.5 w-3.5" />
+                        Public — anyone can see this list
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="h-3.5 w-3.5" />
+                        Private — only you can see this list
+                      </>
+                    )}
+                  </button>
                   <button
                     onClick={createList}
                     disabled={!newListName.trim()}

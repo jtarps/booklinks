@@ -290,7 +290,7 @@ export function ReferenceGraph({ nodes, links }: Props) {
       className={`relative bg-white rounded-lg shadow-lg overflow-hidden ${
         isFullscreen ? 'fixed inset-0 z-50 rounded-none' : ''
       }`}
-      style={{ height: isFullscreen ? '100vh' : '70vh' }}
+      style={{ height: isFullscreen ? '100vh' : '85vh' }}
     >
       {/* Controls */}
       <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">

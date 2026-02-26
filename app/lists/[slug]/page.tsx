@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { ListVisibilityToggle } from '@/components/ListVisibilityToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,11 @@ export default async function ListDetailPage({ params }: PageProps) {
 
   if (!list) notFound();
 
+  // Check if current user owns this list
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const isOwner = user?.id === list.user_id;
+
   const items = (list.items || []).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
 
   return (
@@ -80,14 +86,19 @@ export default async function ListDetailPage({ params }: PageProps) {
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="p-8">
-          <div className="flex items-start gap-3 mb-4">
-            <BookOpen className="h-6 w-6 text-indigo-600 mt-1" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{list.name}</h1>
-              {list.displayName && (
-                <p className="text-gray-600 mt-1">by {list.displayName}</p>
-              )}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start gap-3">
+              <BookOpen className="h-6 w-6 text-indigo-600 mt-1" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{list.name}</h1>
+                {list.displayName && (
+                  <p className="text-gray-600 mt-1">by {list.displayName}</p>
+                )}
+              </div>
             </div>
+            {isOwner && (
+              <ListVisibilityToggle listId={list.id} initialPublic={list.is_public} />
+            )}
           </div>
           {list.description && (
             <p className="text-gray-700 mb-6">{list.description}</p>
