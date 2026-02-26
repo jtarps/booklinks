@@ -8,7 +8,7 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500';
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500';
 
 async function getList(slug: string) {
   const supabase = await createSupabaseServerClient();

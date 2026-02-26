@@ -22,7 +22,7 @@ import { useAuth } from '@/components/AuthProvider';
 import type { Book } from '@/types';
 
 const DEFAULT_COVER =
-  'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500';
+  'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500';
 
 interface BookDetailClientProps {
   initialBook: Book;

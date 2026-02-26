@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Search, Plus, Book, ArrowRight, Globe, Database } from 'lucide-react';
+import { Search, Book, ArrowRight, Globe, Database, BookOpen, ShoppingCart } from 'lucide-react';
 import { supabase } from '@/lib/supabase-browser';
 import { searchGoogleBooks, type GoogleBook } from '@/lib/googleBooks';
 import { AddBookForm } from './AddBookForm';
-import type { Book as BookType } from '@/types';
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500';
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500';
 
 interface BookSearchProps {
-  initialBooks: BookType[];
+  totalBooks: number;
+  totalReferences: number;
 }
 
 interface SearchResult {
@@ -26,7 +25,7 @@ interface SearchResult {
   googleBook?: GoogleBook;
 }
 
-export function BookSearch({ initialBooks }: BookSearchProps) {
+export function BookSearch({ totalBooks, totalReferences }: BookSearchProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -34,28 +33,24 @@ export function BookSearch({ initialBooks }: BookSearchProps) {
   const [loading, setLoading] = useState(false);
   const [navigating, setNavigating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showInitial, setShowInitial] = useState(true);
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setShowInitial(true);
       setResults([]);
+      setHasSearched(false);
       return;
     }
-
-    setShowInitial(false);
 
     const timer = setTimeout(async () => {
       setLoading(true);
       setError(null);
       try {
-        // Search both sources in parallel
         const [dbResults, googleResults] = await Promise.all([
           searchDatabase(searchQuery),
           searchGoogleBooks(searchQuery),
         ]);
 
-        // Merge results: DB books first, then Google Books (deduped)
         const dbSlugs = new Set(dbResults.map((r) => r.slug));
         const merged: SearchResult[] = [
           ...dbResults,
@@ -79,6 +74,7 @@ export function BookSearch({ initialBooks }: BookSearchProps) {
         ];
 
         setResults(merged);
+        setHasSearched(true);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -130,13 +126,11 @@ export function BookSearch({ initialBooks }: BookSearchProps) {
       return;
     }
 
-    // Google Books result — create in DB first, then navigate
     setNavigating(result.slug);
     try {
       const gb = result.googleBook!;
       const slug = toSlug(gb.volumeInfo.title);
 
-      // Check if it already exists (race condition guard)
       const { data: existing } = await supabase
         .from('books')
         .select('slug')
@@ -161,55 +155,38 @@ export function BookSearch({ initialBooks }: BookSearchProps) {
     }
   }
 
-  // Format initial books for display
-  const initialResults: SearchResult[] = initialBooks.map((book) => ({
-    type: 'db' as const,
-    slug: book.slug,
-    title: book.title,
-    author: book.author,
-    coverUrl: book.coverUrl,
-    description: book.description,
-    referenceCount: book.references.length,
-  }));
-
-  const displayResults = showInitial ? initialResults : results;
+  const isIdle = !searchQuery.trim() && !loading;
 
   return (
     <>
-      <div className="max-w-3xl mx-auto">
-        <section className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Discover Books Within Books
-          </h2>
-          <p className="text-lg text-gray-600">
-            Find all the books referenced in your current read
-          </p>
-        </section>
+      {/* Hero Section */}
+      <section className="text-center mb-10 pt-8">
+        <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+          Discover Books Within Books
+        </h2>
+        <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+          Every great book references other great books. Search any title to
+          uncover its hidden reading list.
+        </p>
+      </section>
 
-        <div className="flex gap-4 mb-8">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              className="block w-full pl-10 pr-3 py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
-              placeholder="Search any book title or author..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      {/* Search Bar */}
+      <div className="max-w-2xl mx-auto mb-12">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
           </div>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2"
-          >
-            <Plus className="h-5 w-5" />
-            Add Book
-          </button>
+          <input
+            type="text"
+            className="block w-full pl-12 pr-4 py-4 text-lg border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+            placeholder="Search any book title or author..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
 
         {showAddForm && (
-          <div className="mb-8">
+          <div className="mt-6">
             <AddBookForm />
           </div>
         )}
@@ -221,14 +198,15 @@ export function BookSearch({ initialBooks }: BookSearchProps) {
         )}
       </div>
 
+      {/* Search Results */}
       {loading ? (
-        <div className="mt-12 text-center">
+        <div className="text-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Searching books...</p>
         </div>
-      ) : displayResults.length > 0 ? (
-        <section className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {displayResults.map((result) => (
+      ) : results.length > 0 ? (
+        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-16">
+          {results.map((result) => (
             <button
               key={`${result.type}-${result.slug}`}
               onClick={() => handleResultClick(result)}
@@ -264,47 +242,75 @@ export function BookSearch({ initialBooks }: BookSearchProps) {
             </button>
           ))}
         </section>
-      ) : searchQuery && !loading ? (
-        <div className="mt-12 text-center">
-          <p className="text-gray-600">
-            No books found. Try a different search term.
+      ) : hasSearched && !loading ? (
+        <div className="text-center py-12">
+          <p className="text-gray-600 mb-3">
+            No books found for &ldquo;{searchQuery}&rdquo;.
           </p>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="text-indigo-600 hover:text-indigo-800 font-medium"
+          >
+            Can&apos;t find your book? Add it here &rarr;
+          </button>
         </div>
-      ) : !searchQuery ? (
-        <section className="mt-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-indigo-100 rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
-                <Search className="h-6 w-6 text-indigo-600" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Search Any Book</h3>
-              <p className="text-gray-600">
-                Search by title or author — we'll find it
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="bg-indigo-100 rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
-                <Book className="h-6 w-6 text-indigo-600" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">
-                Discover References
-              </h3>
-              <p className="text-gray-600">
-                See all books mentioned or referenced
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="bg-indigo-100 rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
-                <ArrowRight className="h-6 w-6 text-indigo-600" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Quick Purchase</h3>
-              <p className="text-gray-600">
-                Direct links to buy referenced books
-              </p>
-            </div>
-          </div>
-        </section>
       ) : null}
+
+      {/* How It Works — always visible when idle */}
+      {isIdle && (
+        <>
+          <section className="mb-16">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="bg-indigo-100 rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                  <Search className="h-6 w-6 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Search Any Book</h3>
+                <p className="text-gray-600">
+                  Search by title or author — we&apos;ll find it
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="bg-indigo-100 rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                  <BookOpen className="h-6 w-6 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">
+                  Discover References
+                </h3>
+                <p className="text-gray-600">
+                  See every book mentioned or cited inside
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="bg-indigo-100 rounded-full p-3 w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                  <ShoppingCart className="h-6 w-6 text-indigo-600" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Quick Purchase</h3>
+                <p className="text-gray-600">
+                  Direct links to buy referenced books
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Social Proof */}
+          {(totalBooks > 0 || totalReferences > 0) && (
+            <section className="text-center mb-8">
+              <div className="inline-flex items-center gap-6 text-gray-500 text-sm">
+                <span className="flex items-center gap-1.5">
+                  <Book className="h-4 w-4" />
+                  <strong className="text-gray-900">{totalBooks.toLocaleString()}</strong> books catalogued
+                </span>
+                <span className="text-gray-300">|</span>
+                <span className="flex items-center gap-1.5">
+                  <ArrowRight className="h-4 w-4" />
+                  <strong className="text-gray-900">{totalReferences.toLocaleString()}</strong> references mapped
+                </span>
+              </div>
+            </section>
+          )}
+        </>
+      )}
     </>
   );
 }

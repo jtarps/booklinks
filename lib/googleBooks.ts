@@ -25,10 +25,13 @@ export interface GoogleBookMention {
   };
 }
 
+const GOOGLE_BOOKS_API_KEY = process.env.GOOGLE_BOOKS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY;
+
 export async function searchGoogleBooks(query: string): Promise<GoogleBook[]> {
   try {
+    const keyParam = GOOGLE_BOOKS_API_KEY ? `&key=${GOOGLE_BOOKS_API_KEY}` : '';
     const response = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5`
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=5${keyParam}`
     );
     const data = await response.json();
     return data.items || [];
@@ -48,8 +51,9 @@ export async function searchBooksMentioning(
       query += ` "${bookAuthor}"`;
     }
 
+    const keyParam = GOOGLE_BOOKS_API_KEY ? `&key=${GOOGLE_BOOKS_API_KEY}` : '';
     const response = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&fields=items(id,volumeInfo(title,authors,description,imageLinks/thumbnail),searchInfo/textSnippet)`
+      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20&fields=items(id,volumeInfo(title,authors,description,imageLinks/thumbnail),searchInfo/textSnippet)${keyParam}`
     );
 
     const data = await response.json();

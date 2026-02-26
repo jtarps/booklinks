@@ -63,7 +63,8 @@ async function fixCovers() {
   for (const book of books) {
     const needsFix =
       !book.cover_url ||
-      book.cover_url.includes('unsplash.com');
+      book.cover_url.includes('unsplash.com') ||
+      book.cover_url.includes('placeholder');
 
     if (!needsFix) {
       skipped++;

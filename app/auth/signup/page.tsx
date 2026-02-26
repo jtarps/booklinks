@@ -15,6 +15,15 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
+  const handleGoogleSignup = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -127,6 +136,19 @@ export default function SignupPage() {
             {loading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : 'Create account'}
           </button>
         </form>
+
+        <div className="my-6 flex items-center">
+          <div className="flex-1 border-t border-gray-300" />
+          <span className="px-4 text-sm text-gray-500">or</span>
+          <div className="flex-1 border-t border-gray-300" />
+        </div>
+
+        <button
+          onClick={handleGoogleSignup}
+          className="w-full py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-gray-700"
+        >
+          Continue with Google
+        </button>
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Already have an account?{' '}
