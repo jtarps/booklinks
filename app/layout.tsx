@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Book } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from '@/components/AuthProvider';
 import { UserMenu } from '@/components/UserMenu';
 import { Footer } from '@/components/Footer';
+import { FeedbackButton } from '@/components/FeedbackButton';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -59,7 +61,9 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <FeedbackButton />
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
