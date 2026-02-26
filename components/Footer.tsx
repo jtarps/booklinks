@@ -49,8 +49,14 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} BookLinks. All rights reserved.
+        <div className="mt-8 pt-8 border-t border-gray-800 text-sm text-gray-500">
+          <p className="text-center text-xs text-gray-600 mb-4">
+            As an Amazon Associate, BookLinks earns from qualifying purchases.
+            Book links on this site may be affiliate links.
+          </p>
+          <p className="text-center">
+            &copy; {new Date().getFullYear()} BookLinks. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
