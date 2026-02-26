@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -16,8 +18,7 @@ async function getList(slug: string) {
   const { data, error } = await supabase
     .from('reading_lists')
     .select(`
-      id, name, description, slug, is_public, created_at,
-      profile:profiles(display_name),
+      id, name, description, slug, is_public, created_at, user_id,
       items:reading_list_items(
         id, position, notes,
         book:books(id, slug, title, author, cover_url, description)
@@ -27,7 +28,19 @@ async function getList(slug: string) {
     .single();
 
   if (error || !data) return null;
-  return data;
+
+  // Fetch profile separately via user_id
+  let displayName: string | null = null;
+  if (data.user_id) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', data.user_id)
+      .single();
+    displayName = profile?.display_name || null;
+  }
+
+  return { ...data, displayName };
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -36,14 +49,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!list) return { title: 'List Not Found' };
 
-  const profile = Array.isArray(list.profile) ? list.profile[0] : list.profile;
-
   return {
     title: list.name,
     description: list.description || `A reading list with ${(list.items || []).length} books curated on BookLinks.`,
     openGraph: {
       title: `${list.name} | BookLinks Reading List`,
-      description: list.description || `${(list.items || []).length} books curated by ${profile?.display_name || 'a BookLinks user'}.`,
+      description: list.description || `${(list.items || []).length} books curated by ${list.displayName || 'a BookLinks user'}.`,
       type: 'article',
     },
   };
@@ -55,7 +66,6 @@ export default async function ListDetailPage({ params }: PageProps) {
 
   if (!list) notFound();
 
-  const profile = Array.isArray(list.profile) ? list.profile[0] : list.profile;
   const items = (list.items || []).sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
 
   return (
@@ -74,8 +84,8 @@ export default async function ListDetailPage({ params }: PageProps) {
             <BookOpen className="h-6 w-6 text-indigo-600 mt-1" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{list.name}</h1>
-              {profile?.display_name && (
-                <p className="text-gray-600 mt-1">by {profile.display_name}</p>
+              {list.displayName && (
+                <p className="text-gray-600 mt-1">by {list.displayName}</p>
               )}
             </div>
           </div>

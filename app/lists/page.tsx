@@ -10,16 +10,33 @@ export const metadata = {
 export default async function ListsPage() {
   const supabase = await createSupabaseServerClient();
 
-  const { data: lists } = await supabase
+  const { data: rawLists } = await supabase
     .from('reading_lists')
     .select(`
-      id, name, description, slug, created_at,
-      profile:profiles(display_name),
+      id, name, description, slug, created_at, user_id,
       items:reading_list_items(count)
     `)
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .limit(50);
+
+  // Fetch profiles for list owners
+  const userIds = Array.from(new Set((rawLists || []).map((l: any) => l.user_id).filter(Boolean)));
+  let profileMap: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, display_name')
+      .in('id', userIds);
+    profileMap = Object.fromEntries(
+      (profiles || []).map((p: any) => [p.id, p.display_name])
+    );
+  }
+
+  const lists = (rawLists || []).map((list: any) => ({
+    ...list,
+    displayName: profileMap[list.user_id] || null,
+  }));
 
   return (
     <div>
@@ -30,7 +47,6 @@ export default async function ListsPage() {
       {lists && lists.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {lists.map((list: any) => {
-            const profile = Array.isArray(list.profile) ? list.profile[0] : list.profile;
             const itemCount = Array.isArray(list.items) ? list.items[0]?.count ?? 0 : 0;
             return (
               <Link
@@ -49,10 +65,10 @@ export default async function ListsPage() {
                     )}
                     <div className="flex items-center gap-3 mt-3 text-xs text-gray-500">
                       <span>{itemCount} book{itemCount !== 1 ? 's' : ''}</span>
-                      {profile?.display_name && (
+                      {list.displayName && (
                         <>
                           <span>&bull;</span>
-                          <span>by {profile.display_name}</span>
+                          <span>by {list.displayName}</span>
                         </>
                       )}
                     </div>

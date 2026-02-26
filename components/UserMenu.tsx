@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { User, LogOut, BookOpen, ChevronDown } from 'lucide-react';
+import { User, LogOut, BookOpen, ChevronDown, Shield, BarChart3 } from 'lucide-react';
 import { useAuth } from './AuthProvider';
+import { supabase } from '@/lib/supabase-browser';
 
 export function UserMenu() {
   const { user, loading, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -19,6 +21,16 @@ export function UserMenu() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => setIsAdmin(data?.is_admin === true));
+  }, [user]);
 
   if (loading) {
     return <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />;
@@ -80,6 +92,27 @@ export function UserMenu() {
             <BookOpen className="w-4 h-4" />
             My Lists
           </Link>
+          <Link
+            href="/stats"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <BarChart3 className="w-4 h-4" />
+            Stats
+          </Link>
+          {isAdmin && (
+            <>
+              <hr className="my-1" />
+              <Link
+                href="/feedback"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50"
+              >
+                <Shield className="w-4 h-4" />
+                Admin: Feedback
+              </Link>
+            </>
+          )}
           <hr className="my-1" />
           <button
             onClick={() => {
