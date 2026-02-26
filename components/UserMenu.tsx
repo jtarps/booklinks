@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { User, LogOut, BookOpen, ChevronDown, Shield, BarChart3 } from 'lucide-react';
+import { User, LogOut, BookOpen, ChevronDown, Shield, BarChart3, Network } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 import { supabase } from '@/lib/supabase-browser';
 
@@ -91,6 +91,14 @@ export function UserMenu() {
           >
             <BookOpen className="w-4 h-4" />
             My Lists
+          </Link>
+          <Link
+            href="/explore"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <Network className="w-4 h-4" />
+            Reference Map
           </Link>
           <Link
             href="/stats"

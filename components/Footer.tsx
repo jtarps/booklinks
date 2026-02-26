@@ -23,6 +23,11 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
+                <Link href="/explore" className="hover:text-white transition-colors">
+                  Reference Map
+                </Link>
+              </li>
+              <li>
                 <Link href="/stats" className="hover:text-white transition-colors">
                   Stats
                 </Link>
