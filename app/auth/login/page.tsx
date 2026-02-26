@@ -94,6 +94,12 @@ export default function LoginPage() {
           >
             {loading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : 'Sign in'}
           </button>
+
+          <div className="text-right">
+            <Link href="/auth/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-500">
+              Forgot your password?
+            </Link>
+          </div>
         </form>
 
         <div className="my-6 flex items-center">
